@@ -4,7 +4,11 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>../../../../Progra/TPFINAL/prueba2/disdrv.h</itemPath>
+      <itemPath>gameStructs.h</itemPath>
+      <itemPath>../../../../Progra/TPFINAL/prueba2/joydrv.h</itemPath>
       <itemPath>modulorpi.h</itemPath>
+      <itemPath>../../../../Progra/TPFINAL/prueba2/termlib.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -13,8 +17,11 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>../../../../Progra/TPFINAL/prueba2/disdrv.o</itemPath>
+      <itemPath>../../../../Progra/TPFINAL/prueba2/joydrv.o</itemPath>
       <itemPath>main.c</itemPath>
       <itemPath>modulorpi.c</itemPath>
+      <itemPath>../../../../Progra/TPFINAL/prueba2/termlib.o</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
@@ -38,6 +45,38 @@
       </toolsSet>
       <compileType>
       </compileType>
+      <item path="../../../../Progra/TPFINAL/prueba2/disdrv.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/disdrv.o"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/joydrv.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/joydrv.o"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/termlib.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/termlib.o"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="gameStructs.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="main.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="modulorpi.c" ex="false" tool="0" flavor2="0">
@@ -65,6 +104,38 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
+      <item path="../../../../Progra/TPFINAL/prueba2/disdrv.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/disdrv.o"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/joydrv.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/joydrv.o"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/termlib.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../../Progra/TPFINAL/prueba2/termlib.o"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="gameStructs.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="main.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="modulorpi.c" ex="false" tool="0" flavor2="0">
