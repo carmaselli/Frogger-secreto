@@ -13,6 +13,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+
+#include "gameStructs.h"
+#include <>
+
 
 /*Forward declarations*/
 extern state_t startMenuViewScoreBoard[3+1];
@@ -28,7 +33,7 @@ extern state_t saveScore3Char[3+1];
 
 int main(void) 
 {
-    
+    /*INICIALIZACION DE TABLAS DE ESTADOS   */
     state_t startMenuPlayGame[3+1] = 
     {
         {DOWN_EVENT,startMenuViewScoreboard,non_act_routine,START_PLAY_ID},
@@ -93,6 +98,40 @@ int main(void)
         {END_TABLE,saveScoreChar,non_act_routine,SAVE_SCORE_ID}
     };
     
+    gameData_t gameData;
+    gameData.currentState = startMenuPlayGame;  //estado inicial
+    gameData.quitGame = false;
+    pthread_t input_id,output_id;   
+    pthread_create(&input_id,NULL,input_thread,&gameData);  //creacion de threads de input y output
+    pthread_create(&output_id,NULL,output_thread,&gameData);
+    
+    while(!gameData.quitGame)
+    {
+        if(gameData.eventFlag)
+        {
+            gameData.currentState = fsm_handler(gameData.currentState,gameData.event,&gameData);
+            gameData.eventFlag = false;
+        }    
+        
+    
+    
+    }    
+    
     return (EXIT_SUCCESS);
 }
 
+
+/****************************** FSM_HANDLER FUNCTION *********************************/
+state_t* fsm_handler(state_t *currentState, event_t newEvent, void *pActRoutineData)
+{
+    
+    while(currentState->event.type != newEvent.type && currentState->eventType != END_TABLE)
+    {
+        currentState++;
+    }
+
+    (*currentState->actionRoutine)(pActRoutineData);
+    currentState = currentState->nextState;
+    return currentState;
+    
+}
