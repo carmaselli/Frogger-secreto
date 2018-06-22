@@ -23,18 +23,19 @@ typedef struct
     bool timerFlag;
 }event_t;
 
+typedef struct STATE
+{
+    uint8_t eventType;
+    struct STATE *nextState;
+    void (*actionRoutine)(void *);
+    int stateID;
+} state_t;
+
 typedef struct
 {
     char player[3];
     uint score;
 } scorer_t;
-typedef struct STATE
-{
-    event_t event;
-    struct STATE *nextState;
-    void (*actionRoutine)(void *);
-    int stateID;
-} state_t;
 
 typedef struct
 {
@@ -45,18 +46,18 @@ typedef struct
 typedef struct
 {
     int lives;
-    bool levelUp;
+    bool levelUp;       //goto linea 56
     bool frogHit;
     bool quitGame;
-    bool (*pBoard)[16][16];
-    frog_t frog;
     char player[3];
     uint score;
-    scorer_t (*pTop10)[10];
+    scorer_t (*pTop10)[10];     //pensar si conviene
     state_t *currentState;
-    event_t event;
+    event_t event;      //vemos si charlie se queda hasta las 5am haceidno una cola de eventos 
+    bool eventFlag;
 }gameData_t;
 
+enum ids{START_PLAY_ID,START_SCOREBOARD_ID,START_QUIT_ID,SCORE_BOARD_ID,GAME_ID,PAUSE_RESUME_ID,PAUSE_RESTART_ID,SAVE_SCORE_ID,END_TABLE};
 
 #endif /* GAMESTRUCTS_H */
 
