@@ -4,437 +4,134 @@
  * and open the template in the editor.
  */
 
+/* 
+ * File:   main.c
+ * Author: nico
+ *
+ * Created on June 22, 2018, 5:43 PM
+ */
 
-#include "modulorpi.h"
-#include "eventQueue.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
 #include "gameStructs.h"
+#include "eventQueue.h"
 
-static void printBoard(bool p2board[][DISSIZE]);
-static bool checkWin(frog_t *frogCoords, bool board[][DISSIZE]);
-static bool checkCollision(frog_t frogCoords,bool board[][DISSIZE]);
-static void moveFrog(uint16_t where,frog_t *frogCoords);
-static void cars_routine(bool board[][DISSIZE],frog_t *frogCoords);
-static void shift_handler(bool board[DISSIZE][DISSIZE], bool way, int row_num);
-static void shift_right_row(bool row[DISSIZE][DISSIZE], int row_num);
-static void shift_left_row(bool row[DISSIZE][DISSIZE], int row_num);
+state_t* fsm_handler(state_t *currentState, event_t newEvent, void *pActRoutineData);
 
-/*int main(void)
+/*Forward declarations*/
+extern state_t startMenuViewScoreBoard[3+1];
+extern state_t startMenuQuit[2+1];
+extern state_t scoreBoard[3+1];
+extern state_t game[8+1];
+extern state_t pauseMenuResume[3+1];
+extern state_t pauseMenuBackToStart[3+1];
+extern state_t saveScore1Char[3+1];
+extern state_t saveScore2Char[3+1];
+extern state_t saveScore3Char[3+1];
+
+
+int main(void) 
 {
-  event_t evento;
-  evento.flag = false;
-  gameData_t gameData;
-  gameData.frog.x = 0;
-  gameData.frog.y = 0;
-  pthread_t tinp,tout;
-  bool board[DISSIZE][DISSIZE];
-  gameData.pBoard = &board;  //POSIBLE QUILOMBO
-  int i,j;
-  for( i = 0 ; i < DISSIZE ; i++ )
-  {
-    for( j = 0 ; j < DISSIZE ; j++ )
+    /*INICIALIZACION DE TABLAS DE ESTADOS*/
+    state_t startMenuPlayGame[3+1] = 
     {
-      gameData.pBoard[0][i][j] = false; //inicializo tablero apagado
-    }
-  }
-  pthread_create(&tinp,NULL,input_thread,&evento);
-  pthread_create(&tout,NULL,output_thread,&gameData);
-  changemode(BUFFERED_OFF);
-  while(!kbhit())
-  {
-    if(evento.flag)
+        {DOWN_EVENT,startMenuViewScoreboard,non_act_routine,START_PLAY_ID},
+        {UP_EVENT,startMenuQuit,non_act_routine,START_PLAY_ID},
+        {ENTER_EVENT,game,start_game,START_PLAY_ID},
+        {END_TABLE,startMenuPlayGame,non_act_routine,START_PLAY_ID}
+    };        
+    state_t startMenuViewScoreBoard[3+1] =
     {
-      evento.flag = false;
-      if(evento.type == RIGHT_EVENT)
-      {
-        gameData.frog.x++;
-      }
-      else if(evento.type == LEFT_EVENT)
-      {
-        gameData.frog.x--;
-      }
-      else if(evento.type == UP_EVENT)
-      {
-        gameData.frog.y++;
-      }
-      else if(evento.type == DOWN_EVENT)
-      {
-        gameData.frog.y--;
-      }
-      else if(evento.type == ENTER_EVENT)
-      {
-
-      }
-
-      if(gameData.frog.x > MAX_X)
-      {
-        gameData.frog.x = MAX_X;
-      }
-      else if(gameData.frog.x < MIN_X)
-      {
-        gameData.frog.x = MIN_X;
-      }
-      if(gameData.frog.y > MAX_Y)
-      {
-        gameData.frog.y = MAX_Y;
-      }
-      if(gameData.frog.y < MIN_Y)
-      {
-        gameData.frog.y = MIN_Y;
-      }
-    }
-  }
-  changemode(BUFFERED_ON);
-  display_clear();
-  return 0;
-}*/
-
-void* input_thread (void* event)//genera eventos de movimiento del joystick
-{
-  event_t *my_event = event; //asigno puntero para no tener que castear pcada vez que quiero usarlo
-  jcoord_t my_coordinates;
-  jswitch_t my_switch = J_NOPRESS;
-  bool trigger_lock_x = false;
-  bool trigger_lock_y = false;
-  bool switch_lock = false;
-
-  joy_init();
-  set_joy_axis(JOY_ROTATE);	// OJO considero que usamos joystick abajo y no a la izq
-  set_joy_direction(J_INV_TRUE,J_INV_TRUE);
-
-  infinite_loop
-  {
-    joystick_update();
-    my_switch=joystick_get_switch_value();//recibe valores actuales del joystick y el boton
-    my_coordinates = joystick_get_coord();
-
-    if(my_event->flag != true ) //generador de eventos
+        {DOWN_EVENT,startMenuQuit,non_act_routine,START_SCOREBOARD_ID},
+        {UP_EVENT,startMenuPlayGame,non_act_routine,START_SCOREBOARD_ID},
+        {ENTER_EVENT,scoreBoard,non_act_routine,START_SCOREBOARD_ID},
+        {END_TABLE,startMenuViewScoreBoard,non_act_routine,START_SCOREBOARD_ID}
+    };
+    state_t startMenuQuit[2+1] = 
     {
-       if(!trigger_lock_x)
-       {
-         if(my_coordinates.x > JOY_THRESHOLD )
-         {
-          my_event->flag = true;
-          my_event->type = RIGHT_EVENT;
-          trigger_lock_x = true;
-          printf("RIGHT EVENT\n");
-         }
-         else if(my_coordinates.x < -JOY_THRESHOLD )
-         {
-          my_event->flag = true;
-          my_event->type = LEFT_EVENT;
-          trigger_lock_x = true;
-          printf("LEFT EVENT\n");
-         }
-       }
-       if(!trigger_lock_y)
-       {
-         if(my_coordinates.y > JOY_THRESHOLD )
-         {
-           my_event->flag = true;
-           my_event->type = UP_EVENT;
-           trigger_lock_y = true;
-           printf("UP EVENT\n");
-         }
-         else if(my_coordinates.y < -JOY_THRESHOLD )
-         {
-           my_event->flag = true;
-           my_event->type = DOWN_EVENT;
-           trigger_lock_y = true;
-           printf("DOWN EVENT\n");
-         }
-       }
-       if(my_switch == J_PRESS && !switch_lock)
-    	{
-        my_event->flag = true;
-        my_event->type = ENTER_EVENT;
-        switch_lock = true;
-        printf("ENTER EVENT\n");
-    	}
-    }
-    if (trigger_lock_x && my_coordinates.x < JOY_THRESHOLD && my_coordinates.x > -JOY_THRESHOLD)  //bloqueo de lectura para evitar que se envie el evento si se mantiene presionado
+        {DOWN_EVENT,startMenuPlayGame,non_act_routine,START_QUIT_ID},
+        {UP_EVENT,startMenuViewScoreBoard,non_act_rotuine,START_QUIT_ID},
+        {ENTER_EVENT,NULL,endGame,START_QUIT_ID},
+        {END_TABLE,startMenuQuit,non_act_routine,START_QUIT_ID}
+    };
+    state_t scoreBoard[3+1] = 
     {
-      trigger_lock_x = false;
-      //printf("TRIGGERLOCKX OFF\n");
-    }
-    if (trigger_lock_y && my_coordinates.y < JOY_THRESHOLD && my_coordinates.y > -JOY_THRESHOLD)  //bloqueo de lectura para evitar que se envie el evento si se mantiene presionado
+        {DOWN_EVENT,scoreBoard,showNextScore,SCORE_BOARD_ID},
+        {UP_EVENT,scoreBoard,showPreviousScore,SCORE_BOARD_ID},
+        {ENTER_EVENT,startMenuViewScoreBoard,non_act_routine,SCORE_BOARD_ID},
+        {END_TABLE,scoreBoard,non_act_routine,SCORE_BOARD_ID}
+    };
+    state_t game[8+1] =
     {
-      trigger_lock_y = false;
-      //printf("TRIGGERLOCKY OFF\n");
-    }
-    if (switch_lock && my_switch == J_NOPRESS)  //bloqueo de lectura para evitar que se envie el evento si se mantiene presionado
+        {DOWN_EVENT,game,frog_down,GAME_ID},
+        {UP_EVENT,game,frog_up,GAME_ID},
+        {LEFT_EVENT,game,frog_left,GAME_ID},
+        {RIGHT_EVENT,game,frog_right,GAME_ID},
+        {ENTER_EVENT,pauseMenuResume,non_act_routine,GAME_ID},
+        {ARRIVE_EVENT,game,checkLevelUp,GAME_ID},
+        {COLLISION_EVENT,game,checkLives,GAME_ID},
+        {FORWARD_EVENT,game,update_score,GAME_ID},
+        {END_TABLE,game,non_act_routine,GAME_ID}
+    };
+    state_t pauseMenuResume[3+1] =
     {
-      switch_lock = false;
-      //printf("SWITCHLOCK OFF\n");
-    }
-  }
-}
-
-
-/*output_thread (de Raspberry Pi)
-Recibe un puntero a la estructura gameData que contiene la informacion del juego
-Se encarga de:
--manejar los menús juego
--Mover los autos y los troncos
--Imprimir todo en el display de 16x16
--Informar al kernel cuando hubo un choque
--Hacer parpadear la rana para diferenciarla de los autos (para eso usa el thread frogTimeThread)
-Nota: no se encarga de mover la rana en el funcionamiento interno del juego, solo imprime su movimiento */
-
-void* output_thread(void* pointer)
-{
-    bool board[DISSIZE][DISSIZE];
-    frog_t frogCoords;
-    int i,j;
-    for( i = 0 ; i < DISSIZE ; i++ )
+        {DOWN_EVENT,pauseMenuBackToStart,non_act_routine,PAUSE_RESUME_ID},
+        {UP_EVENT,pauseMenuBackToStart,non_act_routine,PAUSE_RESUME_ID},
+        {ENTER_EVENT,game,non_act_routine,PAUSE_RESUME_ID},
+        {END_TABLE,pauseMenuResume,non_act_routine,PAUSE_RESUME_ID}
+    };
+    state_t pauseMenuBackToStart[3+1] =
     {
-      for( j = 0 ; j < DISSIZE ; j++ )
-      {
-        board[i][j] = false; //inicializo tablero apagado
-      }
-    }
-    gameData_t *pGameData = pointer;
-    int maxPosition = INIT_Y;
+        {UP_EVENT,pauseMenuResume,non_act_routine,PAUSE_RESTART_ID},
+        {DOWN_EVENT,pauseMenuResume,non_act_routine,PAUSE_RESTART_ID},
+        {ENTER_EVENT,startMenuPlayGame,non_act_routine,PAUSE_RESTART_ID},
+        {END_TABLE,pauseMenuBackToStart,non_act_routine,PAUSE_RESTART_ID}
+    };
+    state_t saveScoreChar[3+1] =
+    {
+        {DOWN_EVENT,saveScoreChar,fst_letter_down,SAVE_SCORE_ID},
+        {UP_EVENT,saveScoreChar,fst_letter_up,SAVE_SCORE_ID},
+        {LEFT_EVENT,saveScoreChar,previousChar,SAVE_SCORE_ID},
+        {RIGHT_EVENT,saveScoreChar,nextChar,SAVE_SCORE_ID},
+        {ENTER_EVENT,startMenuPlayGame,saveScore,SAVE_SCORE_ID},
+        {END_TABLE,saveScoreChar,non_act_routine,SAVE_SCORE_ID}
+    };
+    uint16_t event;
+    gameData_t gameData;
+    gameData.currentState = startMenuPlayGame;  //estado inicial
+    gameData.quitGame = false;
     
-    display_init(); // inicializacion del display
-    set_display_axis(NORMAL);
-    display_clear();
+    gameData.pEventQueue = create_queue();   //creacion de la cola de eventos
+
+    pthread_t input_id,output_id;   
+    pthread_create(&input_id,NULL,input_thread,gameData.pEventQueue);  //creacion de threads de input y output
+    pthread_create(&output_id,NULL,output_thread,&gameData);
     
-    bool frogTimer = false, dispTimer = false;
-    pthread_t frogTid, dispTid;
-    pthread_create(&frogTid,NULL,frogTimeThread,&frogTimer);    //creacion de timer para parpadeo de la rana
-    pthread_create(&dispTid,NULL,dispTimeThread,&dispTimer);
-    bool toggle = false;    //variable para el parpadeo de la rana
-
-    while(!pGameData->quitGame)
+    while( !gameData.quitGame )
     {
-      while(start menu)
-      {
-        //ver teclado
-        //imprimir menus correspondientes
-        //realizar accion
-        //avisar a main
-        //ahora a escribir gato =)
-      }
-
-
-
-      while( pGameData->stateID == GAME_ID )//mover autos,VER CARS_ROUTINE
-      {
-
-          
-        if(carsTimer)
+        if( event = get_event(&gameData.pEventQueue) )
         {
-          cars_routine(board,&frogCoords);  //mueve los autos y si hace falta la rana
-          carsTimer = false;
-        }
-        if(pGameData->moveFrog.flag)
-        {
-            moveFrog(pGameData->moveFrog.where,&frogCoords); //HABRIA QUE CAMBIAR GAMEDATA
-            if(maxPosition > frogCoords.y)
-            {
-                maxPosition = frogCoords.y;
-                if( !emit_event(pGameData->pEventQueue,FORWARD_EVENT) )
-                {
-                    printf("Coludn't emit event\n");
-                }    
-            }    
+            gameData.currentState = fsm_handler(gameData.currentState,event,&gameData);
         }    
-        
-        printBoard(board);  //Escribe en el display el estado actual de autos y troncos
-        
-        if( checkCollision(pGameData->frog,board) )
-        {
-            emit_event(pGameData->pEventQueue,COLLISION_EVENT);   //verifica si la rana choco
-        }
-        else if( checkWin(&pGameData->frog,board) )
-        {
-            emit_event(pGameData->pEventQueue,ARRIVE_EVENT);       
-            //SEM WAIT LEVEL UP
-            if(pGameData->levelUp)
-            {
-                cars_routine(NULL,frogCoords);
-                pGameData->levelUp = 0;
-            }
-            
-        }
-        
-
-
-
-        if(frogTimer)
-        {
-            toggle = !toggle;
-            display_write(pGameData->frog.x,pGameData->frog.y,toggle);  //prende/apaga la posicion de la rana
-            //display_update();   //SE PUEDE SACAR SIEMPRE QUE ESTO ESTE CERCA DEL FINAL DEL LOOP
-            frogTimer = false;
-        }
-        if(dispTimer)
-        {
-            if(frogCounter--,)
-            display_update();
-        }    
-      }
-      while(pausa)
-      {
-          //revisar teclado
-          //SOLO 2 OPCIONES INICIO Y RETURN
-          //RETURN SALE DEL WHILE SIN HACER NADA (CAMBIAR ESTADO A GAME)
-          //INICIO VUELVE AL MENU PRINCIPAL DEL JUEGO( CAMBIAR ESTADO A MENU Y SALIR DEL WHILE)
-      }
-
-    }
+    }    
+    
+    pthread_join(input_id,NULL);
+    return (EXIT_SUCCESS);
 }
 
-/*checkCollision:
-Recibe: puntero a la posicion de la rana y puntero al arreglo con la posicion de los autos
-Devuelve 1 si la rana choco, 0 si no choco. */
-bool checkCollision(frog_t frogCoords,bool board[][DISSIZE])
-{
-  return board[frogCoords.x][frogCoords.y]; //OJO!!!
-}
 
-/*checkWin:
-Recibe: puntero a la posicion de la rana y puntero al arreglo con los autos, troncos, y posiciones donde puede llegar al final
-Devuelve: 1 si paso de nivel(completo todos los lugares para llegar), 0 si no.
-Funcionamiento: Se fija si la rana esta en la ultima fila, si esta gano porque se acaba de fijar que no haya chocado
-                Despues se fija si paso de nivel, es decir, si ya cayo en todos los otros lugares  */
-bool checkWin(frog_t *frogCoords, bool board[][DISSIZE])
+/****************************** FSM_HANDLER FUNCTION *********************************/
+state_t* fsm_handler(state_t *currentState, uint16_t newEvent, void *pActRoutineData)
 {
-  int i;
-  if(!frogCoords->y)   //si la rana esta en la ultima fila(fila 0)
-  {
-    bool check = false;
-    board[frogCoords->x][frogCoords->y] = 1;    //deja prendido el lugar adonde llego la rana
-    frogCoords->y = INIT_Y;    //OJO!!
-    frogCoords->x = INIT_X;     //devuelve la rana a su posicion inicial
-    return check;
-  }
-  else
-  {
-    return 0;
-  }
-
-}
-
-/*printBoard:
-Recibe un puntero al primer elemento de un arreglo de bools
-Escribe en un display de 16x16 el contenido de ese arreglo
-Nota: debe estar inicializado el display con las herramientas de <disdrv.h> */
-void printBoard(bool p2board[][DISSIZE])
-{
-  int i,j;
-  for( i=0 ; i < DISSIZE ; i++ )
-  {
-    for( j=0 ; j < DISSIZE ; j++)
+    
+    while(currentState->event.type != newEvent && currentState->eventType != END_TABLE)
     {
-      display_write(i,j,p2board[i][j]);
+        currentState++;
     }
-  }
-}
 
-moveFrog(pGameData->moveFrog.where,frogCoords)
-FROG_UP, FROG_DOWN, FROG_RIGHT, FROG_LEFT
-
-void moveFrog(uint16_t where,frog_t *frogCoords)
-{
-  switch(where)
-          case FROG_UP:  
-              frogCoords
-}
-
-
-
-
-
-
-
-/****************************MOVIMIENTO DE AUTOS*********************************/
-
-/*cars_routine
- * Recibe un puntero a un arreglo con la posicion de los autos y un puntero a la posicion de la rana en X
- * Si se subio de nivel (enviar NULL como primer parametro), aumenta la velocidad del movimiento de los autos
- * Sino, 
- * Recibe NULL si se subio de nivel*/
-
-void cars_routine(bool board[][DISSIZE],frog_t *frogCoords)
-{
-    static int dividersMax[DISSIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Cuando se suba de nivel, alguno de estos máximos se decrementará para hacer que el ciclo de avance de el carril correspondiente sea más rápido.
-    static int dividers[DISSIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Ante un evento de timer, se decrementa el divider de cada carril, logrando así que cada carril tenga su ciclo de timer, cuando el divider llega a 0.
-    bool ways[DISSIZE] = {0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0};
-    int row = 0;
-
-    if(!board) // Si se tiene que subir de nivel, se efectua un cambio en el máximo de los divisores.
-    {
-        for(row = 0 ; row < DISSIZE ; row++)
-        {
-            if(dividersMax[row] > 1)
-            {
-                dividersMax[row]--;
-            }    
-        }    
-        frogCoords->x = INIT_X;
-        frogCoords->y = INIT_Y; // Se reinicia la posición de la rana.
-    }
-    else // En cambio, si la rutina fue llamada por evento de timer, se realiza el decremento de los dividers.
-    {
-        for(row = 0; row < DISSIZE; row++)
-        {
-            if(dividersMax[row]) // Si no se está en una fila con divider maximo 0...
-            {
-                dividers[row]--;
-                if(!dividers[row]) // Si se cumplió el ciclo, se mueven los autos.
-                {    
-                    shift_handler(board, ways[row], row);
-                    dividers[row] = dividersMax[row]; // Se resetea el ciclo con el maximo de cada divider.
-                    if(frogCoords->y == row && row > 0 && row < 8 )
-                    {
-                        if(ways[row])
-                        {
-                            frogCoords->x++;     //si ademas esta moviendo troncos, mueve la rana junto con los troncos
-                        }
-                        else
-                        {
-                            frogCoords->x--;
-                        }    
-                    }
-                }
-            }
-        }
-    }
-}
-
-void shift_handler(bool board[DISSIZE][DISSIZE], bool way, int row_num)
-{
-    if(way) // Si way es 1, se gira a la derecha.
-    {            
-        shift_right_row(board, row_num);
-    }
-    else // Se gira a la izquierda.
-    {
-        shift_left_row(board, row_num);
-    }
-}
-
-void shift_right_row(bool row[DISSIZE][DISSIZE], int row_num)
-{
-    bool aux1 = row[DISSIZE-1][row_num], aux2;
-    int i;
-    for(i = 0; i < DISSIZE; i++)
-    {
-        aux2 = row[i][row_num];
-        row[i][row_num] = aux1;
-        aux1 = aux2;
-    }
-}
-
-void shift_left_row(bool row[DISSIZE][DISSIZE], int row_num)
-{
-    bool aux1 = row[0][row_num], aux2;
-    int i;
-    for(i = 0; i < DISSIZE; i++)
-    {
-        aux2 = row[15-i][row_num];
-        row[15-i][row_num] = aux1;
-        aux1 = aux2;
-    }
+    (*currentState->actionRoutine)(pActRoutineData);
+    currentState = currentState->nextState;
+    return currentState;
+    
 }
