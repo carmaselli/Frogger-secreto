@@ -15,13 +15,7 @@
 #define GAMESTRUCTS_H
 
 #include <stdbool.h>
-
-typedef struct
-{
-    bool flag;
-    int type;
-    bool timerFlag;
-}event_t;
+#include "eventQueue.h"
 
 typedef struct STATE
 {
@@ -53,11 +47,32 @@ typedef struct
     uint score;
     scorer_t (*pTop10)[10];     //pensar si conviene
     state_t *currentState;
-    event_t event;      //vemos si charlie se queda hasta las 5am haceidno una cola de eventos 
+    uint16_t event;      //vemos si charlie se queda hasta las 5am haceidno una cola de eventos 
     bool eventFlag;
+    event_queue_t *pEventQueue;
 }gameData_t;
 
-enum ids{START_PLAY_ID,START_SCOREBOARD_ID,START_QUIT_ID,SCORE_BOARD_ID,GAME_ID,PAUSE_RESUME_ID,PAUSE_RESTART_ID,SAVE_SCORE_ID,END_TABLE};
+enum ids {
+    START_PLAY_ID,
+    START_SCOREBOARD_ID,
+    START_QUIT_ID,
+    SCORE_BOARD_ID,
+    GAME_ID,
+    PAUSE_RESUME_ID,
+    PAUSE_RESTART_ID,
+    SAVE_SCORE_ID
+};
 
+enum events {
+    RIGHT_EVENT = 1024,
+    UP_EVENT,
+    DOWN_EVENT,
+    LEFT_EVENT,
+    ENTER_EVENT,
+    ARRIVE_EVENT,
+    COLLISION_EVENT,
+    FORWARD_EVENT,
+    END_TABLE = -1
+};    
 #endif /* GAMESTRUCTS_H */
 

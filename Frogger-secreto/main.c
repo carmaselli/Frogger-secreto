@@ -14,9 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-
 #include "gameStructs.h"
-#include <>
+#include "eventQueue.h"
 
 state_t* fsm_handler(state_t *currentState, event_t newEvent, void *pActRoutineData);
 
@@ -102,16 +101,18 @@ int main(void)
     gameData_t gameData;
     gameData.currentState = startMenuPlayGame;  //estado inicial
     gameData.quitGame = false;
+    
+    gameData.eventQueue = create_queue();   //creacion de la cola de eventos
+    
     pthread_t input_id,output_id;   
     pthread_create(&input_id,NULL,input_thread,&gameData);  //creacion de threads de input y output
     pthread_create(&output_id,NULL,output_thread,&gameData);
     
-    while(!gameData.quitGame)
+    while( !gameData.quitGame )
     {
-        if(charlieNextEvent(&gameData.event))
+        if( gameData.event = get_event(&gameData.pEventQueue) )
         {
-            gameData.currentState = fsm_handler(gameData.currentState,gameData.event,&gameData);
-            //gameData.eventFlag = false;
+            gameData.currentState = fsm_handler(gameData.currentState,gameData.event, &gameData);
         }    
     }    
     

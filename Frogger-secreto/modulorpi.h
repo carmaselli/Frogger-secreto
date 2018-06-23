@@ -17,6 +17,8 @@
 #define infinite_loop while(1)
 #define JOY_THRESHOLD 70     // 10-100 Joystick threshold (sensitivity)
 #define DISSIZE 16
+#define INIT_X 7
+#define INIT_Y 15
 
 
 void* input_thread (void* event);

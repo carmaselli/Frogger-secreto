@@ -20,7 +20,7 @@
 #define FROGTIME 1000
 #define infinite_loop while(1)
 #define ONE_SEC 1000000
-#define FPS 60
+#define FPS 45
 
 void* frogTimeThread (void* event);
 void* dispTimeThread(void* pArg);
