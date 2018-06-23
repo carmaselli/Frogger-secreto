@@ -5,6 +5,7 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>../../../../Progra/TPFINAL/prueba2/disdrv.h</itemPath>
+      <itemPath>../../../Desktop/progra/TPF/eventQueue/eventQueue.h</itemPath>
       <itemPath>gameStructs.h</itemPath>
       <itemPath>../../../../Progra/TPFINAL/prueba2/joydrv.h</itemPath>
       <itemPath>modulorpi.h</itemPath>
@@ -19,6 +20,7 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>../../../../Progra/TPFINAL/prueba2/disdrv.o</itemPath>
+      <itemPath>../../../Desktop/progra/TPF/eventQueue/eventQueue.c</itemPath>
       <itemPath>../../../../Progra/TPFINAL/prueba2/joydrv.o</itemPath>
       <itemPath>main.c</itemPath>
       <itemPath>modulorpi.c</itemPath>
@@ -73,6 +75,16 @@
             flavor2="0">
       </item>
       <item path="../../../../Progra/TPFINAL/prueba2/termlib.o"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../Desktop/progra/TPF/eventQueue/eventQueue.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="../../../Desktop/progra/TPF/eventQueue/eventQueue.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -136,6 +148,16 @@
             flavor2="0">
       </item>
       <item path="../../../../Progra/TPFINAL/prueba2/termlib.o"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../../Desktop/progra/TPF/eventQueue/eventQueue.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="../../../Desktop/progra/TPF/eventQueue/eventQueue.h"
             ex="false"
             tool="3"
             flavor2="0">
