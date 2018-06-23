@@ -6,9 +6,10 @@
 
 
 #include "modulorpi.h"
+#include "eventQueue.h"
+#include "gameStructs.h"
+
 static void printBoard(bool p2board[][DISSIZE]);
-
-
 
 /*int main(void)
 {
@@ -185,6 +186,7 @@ void* output_thread(void* pointer)
       }
     }
     gameData_t *pGameData = pointer;
+    int maxPosition = INIT_Y;
     
     display_init(); // inicializacion del display
     set_display_axis(NORMAL);
@@ -220,21 +222,32 @@ void* output_thread(void* pointer)
         }
         if(pGameData.moveFrog.flag)
         {
-            moveFrog(pGameData.moveFrog.where); //HABRIA QUE CAMBIAR GAMEDATA
+            moveFrog(pGameData.moveFrog.where,frogCoords); //HABRIA QUE CAMBIAR GAMEDATA
+            if(maxPosition > frogCoords.y)
+            {
+                maxPosition = frogCoords.y;
+                emit_event(pGameData->pEventQueue,FORWARD_EVENT);
+            }    
         }    
         
-        printBoard(board);  //VER ACA COMO ES LA ESTRUCTURA GAME DATA Y OJO CON EL NIVEL DEL PUNTERO//Escribe en el display el estado actual de autos y troncos
+        printBoard(board);  //Escribe en el display el estado actual de autos y troncos
         
         if( checkCollision(pGameData->frog,board) )
         {
-            AVISAR QUE HUBO EVENTO HAY QUE CAMBIAR GAME DATA    //verifica si la rana choco
+            emit_event(pGameData->pEventQueue,COLLISION_EVENT);   //verifica si la rana choco
         }
-        else if( checkWin(pGameData->frog,board) );atom://teletype/portal/aed65d0e-56e8-4c3f-8f15-2c19721d350d
-
+        else if( checkWin(pGameData->frog,board) )
         {
-            AVISAR QUE SUBIO DE NIVEL!!!!!!!!!!!!!!
-
+            emit_event(pGameData->pEventQueue,ARRIVE_EVENT);       
+            //SEM WAIT LEVEL UP
+            if(pGameData->levelUp)
+            {
+                cars_routine(NULL,frogCoords);
+                pGameData->levelUp = 0;
+            }    
+            
         }
+        
 
 
 
@@ -242,11 +255,12 @@ void* output_thread(void* pointer)
         {
             toggle = !toggle;
             display_write(pGameData->frog.x,pGameData->frog.y,toggle);  //prende/apaga la posicion de la rana
-          //  display_update();   //SE PUEDE SACAR SIEMPRE QUE ESTO ESTE CERCA DEL FINAL DEL LOOP
-        	  frogTimer = false;
+            //display_update();   //SE PUEDE SACAR SIEMPRE QUE ESTO ESTE CERCA DEL FINAL DEL LOOP
+            frogTimer = false;
         }
         if(dispTimer)
-        {    
+        {
+            if(frogCounter--,)
             display_update();
         }    
       }
@@ -321,11 +335,13 @@ void printBoard(bool p2board[][DISSIZE])
 
 
 /****************************MOVIMIENTO DE AUTOS*********************************/
+
 /*cars_routine
  * Recibe un puntero a un arreglo con la posicion de los autos y un puntero a la posicion de la rana en X
  * Si se subio de nivel (enviar NULL como primer parametro), aumenta la velocidad del movimiento de los autos
  * Sino, 
  * Recibe NULL si se subio de nivel*/
+
 void cars_routine(bool board[][DISSIZE],frog_t frogCoords)
 {
     static int dividersMax[DISSIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Cuando se suba de nivel, alguno de estos máximos se decrementará para hacer que el ciclo de avance de el carril correspondiente sea más rápido.
@@ -336,15 +352,15 @@ void cars_routine(bool board[][DISSIZE],frog_t frogCoords)
 
     if(!board) // Si se tiene que subir de nivel, se efectua un cambio en el máximo de los divisores.
     {
-        //pData->levelUp = !(pData->levelUp); // Se evita que se suba de nivel nuevamente.
-        while((dividersMax[row] <= 1))
+        for(row = 0 ; row < DISSIZE ; row++)
         {
-            row = rand()%16; // Se selecciona al azar uno de los carriles a aumetar su velocidad. No se aumenta la velocidad de los que ya van a la velocidad del clock.
-        }
-        dividersMax[row]--;
-
-        pData->frog.x = 8;
-        pData->frog.y = 15; // Se reinicia la posición de la rana.
+            if(dividersMax[row] > 1)
+            {
+                dividersMax[row]--;
+            }    
+        }    
+        frogCoords.x = INIT_X;
+        frogCoords.y = INIT_Y; // Se reinicia la posición de la rana.
     }
     else // En cambio, si la rutina fue llamada por evento de timer, se realiza el decremento de los dividers.
     {
