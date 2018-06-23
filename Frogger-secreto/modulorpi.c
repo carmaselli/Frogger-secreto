@@ -296,11 +296,10 @@ bool checkWin(frog_t *frogCoords, bool board[][DISSIZE])
   int i;
   if(!frogCoords->y)   //si la rana esta en la ultima fila(fila 0)
   {
-    bool check = false;
     board[frogCoords->x][frogCoords->y] = 1;    //deja prendido el lugar adonde llego la rana
     frogCoords->y = INIT_Y;    //OJO!!
     frogCoords->x = INIT_X;     //devuelve la rana a su posicion inicial
-    return check;
+    return 1;
   }
   else
   {
