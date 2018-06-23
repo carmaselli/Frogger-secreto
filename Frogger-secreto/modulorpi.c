@@ -10,6 +10,9 @@
 #include "gameStructs.h"
 
 static void printBoard(bool p2board[][DISSIZE]);
+static bool checkWin(frog_t *frogCoords, bool board[][DISSIZE]);
+bool checkCollision(frog_t frogCoords,bool board[][DISSIZE]);
+void moveFrog(uint16_t where,frog_t *frogCoords);
 
 /*int main(void)
 {
