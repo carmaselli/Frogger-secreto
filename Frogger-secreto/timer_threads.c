@@ -8,7 +8,7 @@
 
 /*frogTimeThread
 Timer para el parpadeo de la rana */
-void* frogTimeThread (void* p2timer)
+void* carsTimeThread (void* p2timer)
 {
   infinite_loop
   {
@@ -30,6 +30,6 @@ void* dispTimeThread(void* pArg)
     infinite_loop
     {
         usleep(ONE_SEC/FPS);
-        *timerFlag = true;        
+        *ptimerFlag = true;   
     }
 }       

@@ -22,7 +22,7 @@
 #define ONE_SEC 1000000
 #define FPS 45
 
-void* frogTimeThread (void* event);
+void* carsTimeThread (void* event);
 void* dispTimeThread(void* pArg);
 
 #endif /* TIMER_THREADS_H */

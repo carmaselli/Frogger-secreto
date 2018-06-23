@@ -192,91 +192,113 @@ void* output_thread(void* pointer)
     set_display_axis(NORMAL);
     display_clear();
     
-    bool frogTimer = false, dispTimer = false;
+    bool carsTimer = false, dispTimer = false;
     pthread_t frogTid, dispTid;
-    pthread_create(&frogTid,NULL,frogTimeThread,&frogTimer);    //creacion de timer para parpadeo de la rana
+    pthread_create(&frogTid,NULL,carsTimeThread,&carsTimer);    //creacion de timer para parpadeo de la rana
     pthread_create(&dispTid,NULL,dispTimeThread,&dispTimer);
     bool toggle = false;    //variable para el parpadeo de la rana
 
     while(!pGameData->quitGame)
     {
-      while(pGameData->currentState->stateID >= START_PLAY_ID && pGameData->currentState->stateID <= START_QUIT_ID)
-      {
+        uint16_t estadoActual = pGameData->currentState->stateID;
         
-         //ver teclado
-        //imprimir menus correspondientes
-        //realizar accion
-        //avisar a main
-        //ahora a escribir gato =)
-      }
+        while(estadoActual >= START_PLAY_ID && estadoActual <= START_QUIT_ID) //mientras esta en los estados del startmenu
+        {
+            switch(estadoActual)
+            {       
+                case START_PLAY_ID:
+                    printBoard(play);
+                    break;
+                case START_SCOREBOARD_ID:          
+                    printBoard(trophie);
+                    break;
+                case START_QUIT_ID:
+                    printBoard(quit);
+                    break;
+            }       
+            if(dispTimer)
+            {
+              display_update();
+            }
+            estadoActual = pGameData->currentState->stateID;
+        }
       
 
 
-      while( pGameData->stateID == GAME_ID )//mover autos,VER CARS_ROUTINE
-      {
-          
-        if(carsTimer)
+        while( estadoActual == GAME_ID )//mover autos,VER CARS_ROUTINE
         {
-          cars_routine(carsBoard,&frogCoords);  //mueve los autos y si hace falta la rana
-          carsTimer = false;
-        }
-        if(pGameData->moveFrog.flag)
-        {
-            moveFrog(pGameData->moveFrog.where,&frogCoords); //HABRIA QUE CAMBIAR GAMEDATA
-            if(maxPosition > frogCoords.y)
+            if(carsTimer)
             {
-                maxPosition = frogCoords.y;     //se fija si avanzo mas que antes, en caso afirmativo le avisa al main para actualizar el puntaje
+              cars_routine(carsBoard,&frogCoords);  //mueve los autos y si hace falta la rana
+              carsTimer = false;
+            }
+            if(pGameData->moveFrog.flag)
+            {
+                moveFrog(pGameData->moveFrog.where,&frogCoords); //HABRIA QUE CAMBIAR GAMEDATA
+                if(maxPosition > frogCoords.y)
+                {
+                    maxPosition = frogCoords.y;     //se fija si avanzo mas que antes, en caso afirmativo le avisa al main para actualizar el puntaje
+                    if( !emit_event(pGameData->pEventQueue,FORWARD_EVENT) )
+                    {
+                        printf("Coludn't emit event\n");
+                    }    
+                }    
+            }    
+
+            printBoard(carsBoard);  //Escribe en el display el estado actual de autos y troncos
+
+            if( checkCollision(&frogCoords,carsBoard) )         //FIJARSE EL ORDEN! SI PERDIO CAPAZ HAYA QUE PONER UN BREAK
+            {
+                maxPosition = INIT_Y;
+                if( !emit_event(pGameData->pEventQueue,COLLISION_EVENT) )   //si la rana choco, le avisa al main
+                {
+                    printf("Coludn't emit event\n");
+                }  
+            }
+            else if( checkWin(&frogCoords,carsBoard) )
+            {
+                maxPosition = INIT_Y;
                 if( !emit_event(pGameData->pEventQueue,FORWARD_EVENT) )
                 {
                     printf("Coludn't emit event\n");
-                }    
-            }    
-        }    
-        
-        printBoard(carsBoard);  //Escribe en el display el estado actual de autos y troncos
-        
-        if( checkCollision(&frogCoords,carsBoard) )         //FIJARSE EL ORDEN! SI PERDIO CAPAZ HAYA QUE PONER UN BREAK
-        {
-            maxPosition = INIT_Y;
-            if( !emit_event(pGameData->pEventQueue,COLLISION_EVENT) )   //si la rana choco, le avisa al main
-            {
-                printf("Coludn't emit event\n");
-            }  
-        }
-        else if( checkWin(&frogCoords,carsBoard) )
-        {
-            maxPosition = INIT_Y;
-            if( !emit_event(pGameData->pEventQueue,FORWARD_EVENT) )
-            {
-                printf("Coludn't emit event\n");
-            }         
-            //SEM WAIT LEVEL UP O PREGUNTAR EN OTRO LADO LEVEL UP, POR EJEMPLO ANTES DE MOVER LOS AUTOS
-            if(pGameData->levelUp)
-            {
-                cars_routine(NULL,&frogCoords);
-                pGameData->levelUp = 0;
+                }         
+                //SEM WAIT LEVEL UP O PREGUNTAR EN OTRO LADO LEVEL UP, POR EJEMPLO ANTES DE MOVER LOS AUTOS
+                if(pGameData->levelUp)
+                {
+                    cars_routine(NULL,&frogCoords);
+                    pGameData->levelUp = 0;
+                }
+
             }
-            
-        }
-              
-        if(dispTimer)
-        {
-            if(!frogCounter--)
+
+            if(dispTimer)
             {
-                frogCounter = FROG_REFRESH;
-                toggle = !toggle;
-                display_write(pGameData->frog.x,pGameData->frog.y,toggle);  //prende/apaga la posicion de la rana                
+                if(!frogCounter--)
+                {
+                    frogCounter = FROG_REFRESH;
+                    toggle = !toggle;
+                    display_write(pGameData->frog.x,pGameData->frog.y,toggle);  //prende/apaga la posicion de la rana                
+                }    
+                display_update();
             }    
-            display_update();
-        }    
-      }
-      while(pausa)
-      {
-          //revisar teclado
-          //SOLO 2 OPCIONES INICIO Y RETURN
-          //RETURN SALE DEL WHILE SIN HACER NADA (CAMBIAR ESTADO A GAME)
-          //INICIO VUELVE AL MENU PRINCIPAL DEL JUEGO( CAMBIAR ESTADO A MENU Y SALIR DEL WHILE)
-      }
+            estadoActual = pGameData->currentState->stateID;
+        }
+        while( estadoActual == PAUSE_RESUME_ID && estadoActual == PAUSE_RESTART_ID )
+        {
+            if(estadoActual == PAUSE_RESUME_ID)
+            {
+              printBoard(play);
+            }
+            else if(estadoActual == PAUSE_RESTART_ID)
+            {
+              printBoard(startMenu);
+            }
+            if(dispTimer)
+            {
+              display_update();
+            }
+            estadoActual = pGameData->currentState->stateID;
+        }   
 
     }
 }

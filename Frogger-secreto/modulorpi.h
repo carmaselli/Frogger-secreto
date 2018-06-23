@@ -19,6 +19,7 @@
 #define DISSIZE 16
 #define INIT_X 7
 #define INIT_Y 15
+#define FROG_REFRESH 5
 
 enum movefrog { FROG_UP, FROG_DOWN, FROG_RIGHT, FROG_LEFT };
 
