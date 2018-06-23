@@ -4,7 +4,8 @@
  * and open the template in the editor.
  */
 
-static void* frogTimeThread (void* event);
+
+#include "modulorpi.h"
 static void printBoard(bool p2board[][DISSIZE]);
 
 
@@ -174,6 +175,7 @@ Nota: no se encarga de mover la rana en el funcionamiento interno del juego, sol
 void* output_thread(void* pointer)
 {
     bool board[DISSIZE][DISSIZE];
+    frog_t frogCoords;
     int i,j;
     for( i = 0 ; i < DISSIZE ; i++ )
     {
@@ -183,13 +185,15 @@ void* output_thread(void* pointer)
       }
     }
     gameData_t *pGameData = pointer;
+    
     display_init(); // inicializacion del display
     set_display_axis(NORMAL);
     display_clear();
-    bool frogTimer = false;
-
-    pthread_t frogTid;
+    
+    bool frogTimer = false, dispTimer = false;
+    pthread_t frogTid, dispTid;
     pthread_create(&frogTid,NULL,frogTimeThread,&frogTimer);    //creacion de timer para parpadeo de la rana
+    pthread_create(&dispTid,NULL,dispTimeThread,&dispTimer);
     bool toggle = false;    //variable para el parpadeo de la rana
 
     infinite_loop
@@ -205,19 +209,22 @@ void* output_thread(void* pointer)
 
 
 
-      while( pGameData->stateID == GAME )//mover autos,VER CARS_ROUTINE
+      while( pGameData->stateID == GAME_ID )//mover autos,VER CARS_ROUTINE
       {
 
+          
         if(carsTimer)
         {
+          cars_routine(board,frogCoords);  //mueve los autos y si hace falta la rana
           carsTimer = false;
-
         }
-
-
+        if(pGameData.moveFrog.flag)
+        {
+            moveFrog(pGameData.moveFrog.where); //HABRIA QUE CAMBIAR GAMEDATA
+        }    
+        
         printBoard(board);  //VER ACA COMO ES LA ESTRUCTURA GAME DATA Y OJO CON EL NIVEL DEL PUNTERO//Escribe en el display el estado actual de autos y troncos
-        display_update();
-
+        
         if( checkCollision(pGameData->frog,board) )
         {
             AVISAR QUE HUBO EVENTO HAY QUE CAMBIAR GAME DATA    //verifica si la rana choco
@@ -238,8 +245,10 @@ void* output_thread(void* pointer)
           //  display_update();   //SE PUEDE SACAR SIEMPRE QUE ESTO ESTE CERCA DEL FINAL DEL LOOP
         	  frogTimer = false;
         }
-
-        display_update();
+        if(dispTimer)
+        {    
+            display_update();
+        }    
       }
       while(pausa)
       {
@@ -274,7 +283,7 @@ bool checkWin(frog_t frogCoords, bool board[][DISSIZE])
     board[frogCoords.x][frogCoords.y] = 1;    //deja prendido el lugar adonde llego la rana
     frogCoords.y = INIT_Y;    //OJO!!
     frogCoords.x = INIT_X;     //devuelve la rana a su posicion inicial
-    for( i=0 ; (i<DISSIZE) && !check ; i++ )
+    for( i=0 ; (i < DISSIZE) && !check ; i++ )
     {
       check = !board[0][i];   //OJOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
     }
@@ -303,34 +312,7 @@ void printBoard(bool p2board[][DISSIZE])
   }
 }
 
-/*frogTimeThread
-Timer para el parpadeo de la rana */
-void* frogTimeThread (void* p2timer)
-{
-  infinite_loop
-  {
-   if(*(bool*) p2timer == false)  //solo arranca nuevamente cuando hayan leido el evento
-   {
-     usleep(FROGTIME);
-     *(bool*)p2timer = true;
-   }
-  }
-  return NULL;
-}
 
-
-
-/*****************************/ /*TIMERRRRRRRRR*/ /*******************************/
-    gameData_t *my_data = pArg; //asigno puntero para no tener que castear pcada vez que quiero usarlo
-    infinite_loop
-    {
-        if(my_data->event.timerFlag == false)//OJO esto es si queres que espere a que el main lo vea, si no te importa sacalo, pero cuidado hay que poner semaforos y/o MUTEX (creo que mutex)
-        {
-            usleep(TIME_MS*1000);
-            my_data->event.timerFlag = true;
-        }
-    }
-}
 
 
 
@@ -339,21 +321,25 @@ void* frogTimeThread (void* p2timer)
 
 
 /****************************MOVIMIENTO DE AUTOS*********************************/
-void cars_routine(void *pArg)
+/*cars_routine
+ * Recibe un puntero a un arreglo con la posicion de los autos y un puntero a la posicion de la rana en X
+ * Si se subio de nivel (enviar NULL como primer parametro), aumenta la velocidad del movimiento de los autos
+ * Sino, 
+ * Recibe NULL si se subio de nivel*/
+void cars_routine(bool board[][DISSIZE],frog_t frogCoords)
 {
-    gameData_t *pData = pArg;
-    static int dividersMax[BOARD_SIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Cuando se suba de nivel, alguno de estos máximos se decrementará para hacer que el ciclo de avance de el carril correspondiente sea más rápido.
-    static int dividers[BOARD_SIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Ante un evento de timer, se decrementa el divider de cada carril, logrando así que cada carril tenga su ciclo de timer, cuando el divider llega a 0.
-    boolean_t ways[BOARD_SIZE] = {0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0};
+    static int dividersMax[DISSIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Cuando se suba de nivel, alguno de estos máximos se decrementará para hacer que el ciclo de avance de el carril correspondiente sea más rápido.
+    static int dividers[DISSIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Ante un evento de timer, se decrementa el divider de cada carril, logrando así que cada carril tenga su ciclo de timer, cuando el divider llega a 0.
+    bool ways[DISSIZE] = {0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0};
     int row = 0;
     srand(time(NULL));
 
-    if(pData->levelUp) // Si se tiene que subir de nivel, se efectua un cambio en el máximo de los divisores.
+    if(!board) // Si se tiene que subir de nivel, se efectua un cambio en el máximo de los divisores.
     {
-        pData->levelUp = !(pData->levelUp); // Se evita que se suba de nivel nuevamente.
+        //pData->levelUp = !(pData->levelUp); // Se evita que se suba de nivel nuevamente.
         while((dividersMax[row] <= 1))
         {
-            row = rand()%16; // Se selecciona al azar uno de los carriles a aumetar su velocidad. No se aumenta la volocidad de los que ya van a la velocidad del clock.
+            row = rand()%16; // Se selecciona al azar uno de los carriles a aumetar su velocidad. No se aumenta la velocidad de los que ya van a la velocidad del clock.
         }
         dividersMax[row]--;
 
@@ -362,15 +348,26 @@ void cars_routine(void *pArg)
     }
     else // En cambio, si la rutina fue llamada por evento de timer, se realiza el decremento de los dividers.
     {
-        for(row = 0; row < BOARD_SIZE; row++)
+        for(row = 0; row < DISSIZE; row++)
         {
             if(dividersMax[row]) // Si no se está en una fila con divider maximo 0...
             {
                 dividers[row]--;
                 if(!dividers[row]) // Si se cumplió el ciclo, se mueven los autos.
-                {
-                    shift_handler((*pData->pBoard), ways[row], row);
+                {    
+                    shift_handler(board, ways[row], row);
                     dividers[row] = dividersMax[row]; // Se resetea el ciclo con el maximo de cada divider.
+                    if(frogCoords.y == row && row > 0 && row < 8 )
+                    {
+                        if(ways[row])
+                        {
+                            frogCoords.x++;     //si ademas esta moviendo troncos, mueve la rana junto con los troncos
+                        }
+                        else
+                        {
+                            frogCoords.x--;
+                        }    
+                    }
                 }
             }
         }
@@ -378,23 +375,23 @@ void cars_routine(void *pArg)
 }
 
 
-void shift_handler(boolean_t row[BOARD_SIZE][BOARD_SIZE], boolean_t way, int row_num)
+void shift_handler(bool board[DISSIZE][DISSIZE], bool way, int row_num)
 {
     if(way) // Si way es 1, se gira a la derecha.
-    {
-        shift_right_row(row, row_num);
+    {            
+        shift_right_row(board, row_num);
     }
-    else // Se gira a izquierda.
+    else // Se gira a la izquierda.
     {
-        shift_left_row(row, row_num);
+        shift_left_row(board, row_num);
     }
 }
 
-void shift_right_row(boolean_t row[BOARD_SIZE][BOARD_SIZE], int row_num)
+void shift_right_row(bool row[DISSIZE][DISSIZE], int row_num)
 {
-    boolean_t aux1 = row[BOARD_SIZE-1][row_num], aux2;
+    bool aux1 = row[DISSIZE-1][row_num], aux2;
     int i;
-    for(i = 0; i < BOARD_SIZE; i++)
+    for(i = 0; i < DISSIZE; i++)
     {
         aux2 = row[i][row_num];
         row[i][row_num] = aux1;
@@ -402,11 +399,11 @@ void shift_right_row(boolean_t row[BOARD_SIZE][BOARD_SIZE], int row_num)
     }
 }
 
-void shift_left_row(boolean_t row[BOARD_SIZE][BOARD_SIZE], int row_num)
+void shift_left_row(bool row[DISSIZE][DISSIZE], int row_num)
 {
-    boolean_t aux1 = row[0][row_num], aux2;
+    bool aux1 = row[0][row_num], aux2;
     int i;
-    for(i = 0; i < BOARD_SIZE; i++)
+    for(i = 0; i < DISSIZE; i++)
     {
         aux2 = row[15-i][row_num];
         row[15-i][row_num] = aux1;

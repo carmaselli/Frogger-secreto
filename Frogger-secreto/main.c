@@ -18,6 +18,7 @@
 #include "gameStructs.h"
 #include <>
 
+state_t* fsm_handler(state_t *currentState, event_t newEvent, void *pActRoutineData);
 
 /*Forward declarations*/
 extern state_t startMenuViewScoreBoard[3+1];
@@ -33,7 +34,7 @@ extern state_t saveScore3Char[3+1];
 
 int main(void) 
 {
-    /*INICIALIZACION DE TABLAS DE ESTADOS   */
+    /*INICIALIZACION DE TABLAS DE ESTADOS*/
     state_t startMenuPlayGame[3+1] = 
     {
         {DOWN_EVENT,startMenuViewScoreboard,non_act_routine,START_PLAY_ID},
@@ -107,14 +108,11 @@ int main(void)
     
     while(!gameData.quitGame)
     {
-        if(gameData.eventFlag)
+        if(charlieNextEvent(&gameData.event))
         {
             gameData.currentState = fsm_handler(gameData.currentState,gameData.event,&gameData);
-            gameData.eventFlag = false;
+            //gameData.eventFlag = false;
         }    
-        
-    
-    
     }    
     
     return (EXIT_SUCCESS);
