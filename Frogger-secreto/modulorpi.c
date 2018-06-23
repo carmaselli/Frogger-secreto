@@ -325,15 +325,23 @@ void printBoard(bool p2board[][DISSIZE])
   }
 }
 
-moveFrog(pGameData->moveFrog.where,frogCoords)
-FROG_UP, FROG_DOWN, FROG_RIGHT, FROG_LEFT
-
 void moveFrog(uint16_t where,frog_t *frogCoords)
 {
   switch(where)
-          case FROG_UP:  
-              frogCoords
-}
+      case FROG_UP:
+              frogCoords->y--;
+          break;
+      case FROG_DOWN:        
+              frogCoords->y--;
+          break;    
+      case FROG_RIGHT:
+              frogCoords->x++;  
+          break;    
+      case FROG_LEFT:
+              frogCoords->x--;
+          break;    
+}   
+
 
 
 
