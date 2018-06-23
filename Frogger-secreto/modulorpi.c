@@ -11,8 +11,12 @@
 
 static void printBoard(bool p2board[][DISSIZE]);
 static bool checkWin(frog_t *frogCoords, bool board[][DISSIZE]);
-bool checkCollision(frog_t frogCoords,bool board[][DISSIZE]);
-void moveFrog(uint16_t where,frog_t *frogCoords);
+static bool checkCollision(frog_t frogCoords,bool board[][DISSIZE]);
+static void moveFrog(uint16_t where,frog_t *frogCoords);
+static void cars_routine(bool board[][DISSIZE],frog_t *frogCoords);
+static void shift_handler(bool board[DISSIZE][DISSIZE], bool way, int row_num);
+static void shift_right_row(bool row[DISSIZE][DISSIZE], int row_num);
+static void shift_left_row(bool row[DISSIZE][DISSIZE], int row_num);
 
 /*int main(void)
 {
@@ -329,11 +333,13 @@ void printBoard(bool p2board[][DISSIZE])
 }
 
 moveFrog(pGameData->moveFrog.where,frogCoords)
+FROG_UP, FROG_DOWN, FROG_RIGHT, FROG_LEFT
 
 void moveFrog(uint16_t where,frog_t *frogCoords)
 {
-    
-    
+  switch(where)
+          case FROG_UP:  
+              frogCoords
 }
 
 
@@ -396,7 +402,6 @@ void cars_routine(bool board[][DISSIZE],frog_t *frogCoords)
         }
     }
 }
-
 
 void shift_handler(bool board[DISSIZE][DISSIZE], bool way, int row_num)
 {
