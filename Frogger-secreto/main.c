@@ -97,34 +97,35 @@ int main(void)
         {ENTER_EVENT,startMenuPlayGame,saveScore,SAVE_SCORE_ID},
         {END_TABLE,saveScoreChar,non_act_routine,SAVE_SCORE_ID}
     };
-    
+    uint16_t event;
     gameData_t gameData;
     gameData.currentState = startMenuPlayGame;  //estado inicial
     gameData.quitGame = false;
     
-    gameData.eventQueue = create_queue();   //creacion de la cola de eventos
-    
+    gameData.pEventQueue = create_queue();   //creacion de la cola de eventos
+
     pthread_t input_id,output_id;   
-    pthread_create(&input_id,NULL,input_thread,&gameData);  //creacion de threads de input y output
+    pthread_create(&input_id,NULL,input_thread,gameData.pEventQueue);  //creacion de threads de input y output
     pthread_create(&output_id,NULL,output_thread,&gameData);
     
     while( !gameData.quitGame )
     {
-        if( gameData.event = get_event(&gameData.pEventQueue) )
+        if( event = get_event(&gameData.pEventQueue) )
         {
-            gameData.currentState = fsm_handler(gameData.currentState,gameData.event, &gameData);
+            gameData.currentState = fsm_handler(gameData.currentState,event,&gameData);
         }    
     }    
     
+    pthread_join(input_id,NULL);
     return (EXIT_SUCCESS);
 }
 
 
 /****************************** FSM_HANDLER FUNCTION *********************************/
-state_t* fsm_handler(state_t *currentState, event_t newEvent, void *pActRoutineData)
+state_t* fsm_handler(state_t *currentState, uint16_t newEvent, void *pActRoutineData)
 {
     
-    while(currentState->event.type != newEvent.type && currentState->eventType != END_TABLE)
+    while(currentState->event.type != newEvent && currentState->eventType != END_TABLE)
     {
         currentState++;
     }

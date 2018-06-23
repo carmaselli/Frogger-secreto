@@ -198,7 +198,7 @@ void* output_thread(void* pointer)
     pthread_create(&dispTid,NULL,dispTimeThread,&dispTimer);
     bool toggle = false;    //variable para el parpadeo de la rana
 
-    infinite_loop
+    while(!pGameData->quitGame)
     {
       while(start menu)
       {
@@ -217,16 +217,19 @@ void* output_thread(void* pointer)
           
         if(carsTimer)
         {
-          cars_routine(board,frogCoords);  //mueve los autos y si hace falta la rana
+          cars_routine(board,&frogCoords);  //mueve los autos y si hace falta la rana
           carsTimer = false;
         }
-        if(pGameData.moveFrog.flag)
+        if(pGameData->moveFrog.flag)
         {
-            moveFrog(pGameData.moveFrog.where,frogCoords); //HABRIA QUE CAMBIAR GAMEDATA
+            moveFrog(pGameData->moveFrog.where,&frogCoords); //HABRIA QUE CAMBIAR GAMEDATA
             if(maxPosition > frogCoords.y)
             {
                 maxPosition = frogCoords.y;
-                emit_event(pGameData->pEventQueue,FORWARD_EVENT);
+                if( !emit_event(pGameData->pEventQueue,FORWARD_EVENT) )
+                {
+                    printf("Coludn't emit event\n");
+                }    
             }    
         }    
         
@@ -236,7 +239,7 @@ void* output_thread(void* pointer)
         {
             emit_event(pGameData->pEventQueue,COLLISION_EVENT);   //verifica si la rana choco
         }
-        else if( checkWin(pGameData->frog,board) )
+        else if( checkWin(&pGameData->frog,board) )
         {
             emit_event(pGameData->pEventQueue,ARRIVE_EVENT);       
             //SEM WAIT LEVEL UP
@@ -244,7 +247,7 @@ void* output_thread(void* pointer)
             {
                 cars_routine(NULL,frogCoords);
                 pGameData->levelUp = 0;
-            }    
+            }
             
         }
         
@@ -288,19 +291,15 @@ Recibe: puntero a la posicion de la rana y puntero al arreglo con los autos, tro
 Devuelve: 1 si paso de nivel(completo todos los lugares para llegar), 0 si no.
 Funcionamiento: Se fija si la rana esta en la ultima fila, si esta gano porque se acaba de fijar que no haya chocado
                 Despues se fija si paso de nivel, es decir, si ya cayo en todos los otros lugares  */
-bool checkWin(frog_t frogCoords, bool board[][DISSIZE])
+bool checkWin(frog_t *frogCoords, bool board[][DISSIZE])
 {
   int i;
-  if(!frogCoords.y)   //si la rana esta en la ultima fila(fila 0)
+  if(!frogCoords->y)   //si la rana esta en la ultima fila(fila 0)
   {
     bool check = false;
-    board[frogCoords.x][frogCoords.y] = 1;    //deja prendido el lugar adonde llego la rana
-    frogCoords.y = INIT_Y;    //OJO!!
-    frogCoords.x = INIT_X;     //devuelve la rana a su posicion inicial
-    for( i=0 ; (i < DISSIZE) && !check ; i++ )
-    {
-      check = !board[0][i];   //OJOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-    }
+    board[frogCoords->x][frogCoords->y] = 1;    //deja prendido el lugar adonde llego la rana
+    frogCoords->y = INIT_Y;    //OJO!!
+    frogCoords->x = INIT_X;     //devuelve la rana a su posicion inicial
     return check;
   }
   else
@@ -326,7 +325,13 @@ void printBoard(bool p2board[][DISSIZE])
   }
 }
 
+moveFrog(pGameData->moveFrog.where,frogCoords)
 
+void moveFrog(uint16_t where,frog_t *frogCoords)
+{
+    
+    
+}
 
 
 
@@ -342,13 +347,12 @@ void printBoard(bool p2board[][DISSIZE])
  * Sino, 
  * Recibe NULL si se subio de nivel*/
 
-void cars_routine(bool board[][DISSIZE],frog_t frogCoords)
+void cars_routine(bool board[][DISSIZE],frog_t *frogCoords)
 {
     static int dividersMax[DISSIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Cuando se suba de nivel, alguno de estos máximos se decrementará para hacer que el ciclo de avance de el carril correspondiente sea más rápido.
     static int dividers[DISSIZE] = {0, 15, 20, 8, 15, 20, 8, 15, 0, 12, 7, 12, 10, 7, 10, 0}; // Ante un evento de timer, se decrementa el divider de cada carril, logrando así que cada carril tenga su ciclo de timer, cuando el divider llega a 0.
     bool ways[DISSIZE] = {0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0};
     int row = 0;
-    srand(time(NULL));
 
     if(!board) // Si se tiene que subir de nivel, se efectua un cambio en el máximo de los divisores.
     {
@@ -359,8 +363,8 @@ void cars_routine(bool board[][DISSIZE],frog_t frogCoords)
                 dividersMax[row]--;
             }    
         }    
-        frogCoords.x = INIT_X;
-        frogCoords.y = INIT_Y; // Se reinicia la posición de la rana.
+        frogCoords->x = INIT_X;
+        frogCoords->y = INIT_Y; // Se reinicia la posición de la rana.
     }
     else // En cambio, si la rutina fue llamada por evento de timer, se realiza el decremento de los dividers.
     {
@@ -373,15 +377,15 @@ void cars_routine(bool board[][DISSIZE],frog_t frogCoords)
                 {    
                     shift_handler(board, ways[row], row);
                     dividers[row] = dividersMax[row]; // Se resetea el ciclo con el maximo de cada divider.
-                    if(frogCoords.y == row && row > 0 && row < 8 )
+                    if(frogCoords->y == row && row > 0 && row < 8 )
                     {
                         if(ways[row])
                         {
-                            frogCoords.x++;     //si ademas esta moviendo troncos, mueve la rana junto con los troncos
+                            frogCoords->x++;     //si ademas esta moviendo troncos, mueve la rana junto con los troncos
                         }
                         else
                         {
-                            frogCoords.x--;
+                            frogCoords->x--;
                         }    
                     }
                 }

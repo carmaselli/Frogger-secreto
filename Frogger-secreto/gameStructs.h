@@ -39,16 +39,20 @@ typedef struct
 
 typedef struct
 {
+    bool flag;
+    uint16_t where;
+}moveFrog_t;
+
+typedef struct
+{
     int lives;
-    bool levelUp;       //goto linea 56
-    bool frogHit;
+    bool levelUp; 
     bool quitGame;
+    moveFrog_t moveFrog; 
     char player[3];
     uint score;
     scorer_t (*pTop10)[10];     //pensar si conviene
     state_t *currentState;
-    uint16_t event;      //vemos si charlie se queda hasta las 5am haceidno una cola de eventos 
-    bool eventFlag;
     event_queue_t *pEventQueue;
 }gameData_t;
 
@@ -74,5 +78,6 @@ enum events {
     FORWARD_EVENT,
     END_TABLE = -1
 };    
+
 #endif /* GAMESTRUCTS_H */
 

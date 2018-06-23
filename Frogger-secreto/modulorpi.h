@@ -20,6 +20,7 @@
 #define INIT_X 7
 #define INIT_Y 15
 
+enum movefrog { FROG_UP, FROG_DOWN, FROG_RIGHT, FROG_LEFT };
 
 void* input_thread (void* event);
 void* output_thread(void* p2gameData);

@@ -11,7 +11,7 @@ typedef struct EVENT
 {
   uint16_t type;
   bool ack; //ver que hacer con esto
-  struct EVENT *p2NextEv;
+  struct EVENT *p2NextEv;   
 }event_t;
 
 typedef struct
